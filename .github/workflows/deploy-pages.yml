@@ -1,3 +1,4 @@
+# Redeploy requested after GitHub Pages enablement
 name: Deploy Blazor WebAssembly to GitHub Pages
 
 on:
