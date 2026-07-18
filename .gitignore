@@ -1,0 +1,63 @@
+# .NET build output
+**/bin/
+**/obj/
+artifacts/
+publish/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Local SDK and NuGet caches
+.dotnet/
+.nuget/
+packages/
+
+# Visual Studio and IDE state
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.DotSettings.user
+
+# Operating-system and editor temporary files
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# Local databases and generated data
+**/Data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+**/appsettings.json
+**/appsettings.*.json
+!**/appsettings.Example.json
+!**/appsettings.example.json
+**/secrets.json
+**/secrets/
+*.pfx
+*.p12
+*.pem
+*.key
+*.keystore
+
+# Local logs
+*.log
+logs/
