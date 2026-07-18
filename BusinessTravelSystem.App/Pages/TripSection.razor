@@ -1,0 +1,172 @@
+<section class="trip-section" aria-labelledby="trip-section-title">
+    <header class="tab-intro">
+        <div>
+            <span class="tab-kicker">Trip</span>
+            <h3 id="trip-section-title">Travel plan</h3>
+            <p>Destinations, confirmed flights, and assigned travel arrangements.</p>
+        </div>
+        <span class="plan-status"><span aria-hidden="true">✓</span> Itinerary ready</span>
+    </header>
+
+    <div class="trip-facts" aria-label="Trip plan summary">
+        <div><span>Travel period</span><strong>@Trip.TravelDates</strong></div>
+        <div><span>Route</span><strong>Manila → @Trip.Destination</strong></div>
+        <div><span>Flight</span><strong>Round trip</strong></div>
+    </div>
+
+    <div class="section-heading-row">
+        <div><h3>Destinations</h3><p>Two planned activity locations</p></div>
+        <span>2 stops</span>
+    </div>
+    <div class="destination-list">
+        <article class="destination-card">
+            <div class="destination-image">
+                <img src="images/tdk-headquarters.png" alt="TDK destination office" />
+                <span>Primary</span>
+            </div>
+            <div class="destination-copy">
+                <span class="stop-label">Stop 1</span>
+                <h4>@Trip.Venue</h4>
+                <p><span class="location-icon" aria-hidden="true"></span>@Trip.Destination</p>
+                <p><span class="calendar-icon" aria-hidden="true"></span>@Trip.TravelDates</p>
+            </div>
+        </article>
+
+        <article class="destination-card">
+            <div class="destination-image">
+                <img src="images/tdk-headquarters.png" alt="TDK destination facility" />
+                <span>Activity venue</span>
+            </div>
+            <div class="destination-copy">
+                <span class="stop-label">Stop 2</span>
+                <h4>@SecondaryVenue</h4>
+                <p><span class="location-icon" aria-hidden="true"></span>@Trip.Destination</p>
+                <p><span class="calendar-icon" aria-hidden="true"></span>@Trip.TravelDates</p>
+            </div>
+        </article>
+    </div>
+
+    <div class="section-heading-row">
+        <div><h3>Flights</h3><p>Round-trip booking with Philippine Airlines</p></div>
+        <span class="confirmed-count"><span aria-hidden="true">✓</span> Confirmed</span>
+    </div>
+    <div class="flight-list">
+        <article class="flight-card">
+            <header><span>Outbound</span><strong>PR422</strong></header>
+            <div class="flight-route">
+                <div class="flight-leg">
+                    <img src="images/airplane-takeoff.png" alt="" />
+                    <p><strong>23:30</strong> <span>@OutboundDate</span><small><b>MNL</b> · Ninoy Aquino International Airport</small></p>
+                </div>
+                <span class="route-connector"><span></span><small>Philippine Airlines</small></span>
+                <div class="flight-leg">
+                    <img src="images/airplane-landing.png" alt="" />
+                    <p><strong>01:30</strong> <span>@ArrivalDate</span><small><b>@DestinationCode</b> · @DestinationAirport</small></p>
+                </div>
+            </div>
+            <footer><span>Economy</span><span>20 kg baggage</span><span>Meal included</span></footer>
+        </article>
+
+        <article class="flight-card">
+            <header><span>Return</span><strong>PR421</strong></header>
+            <div class="flight-route">
+                <div class="flight-leg">
+                    <img src="images/airplane-takeoff.png" alt="" />
+                    <p><strong>14:20</strong> <span>@ReturnDate</span><small><b>@DestinationCode</b> · @DestinationAirport</small></p>
+                </div>
+                <span class="route-connector"><span></span><small>Philippine Airlines</small></span>
+                <div class="flight-leg">
+                    <img src="images/airplane-landing.png" alt="" />
+                    <p><strong>18:10</strong> <span>@ReturnDate</span><small><b>MNL</b> · Ninoy Aquino International Airport</small></p>
+                </div>
+            </div>
+            <footer><span>Economy</span><span>20 kg baggage</span><span>Meal included</span></footer>
+        </article>
+    </div>
+
+    <div class="section-heading-row">
+        <div><h3>Arrangements</h3><p>People responsible for on-ground support</p></div>
+        <span>2 assigned</span>
+    </div>
+    <div class="arrangement-list">
+        <article class="arrangement-card">
+            <header>
+                <div><span class="arrangement-icon" aria-hidden="true">✈</span><div><h4>E-ticket and shuttle service</h4><p>Flight documents and airport transfers</p></div></div>
+                <span class="arrangement-status">Assigned</span>
+            </header>
+            <div class="arrangement-owner">
+                <img src="images/dummy-traveler-avatar.svg" alt="" />
+                <div><strong>@Trip.Reviewer</strong><span>@Trip.Department · +63 917 047 6850</span></div>
+                <time>@Trip.DateFiled</time>
+            </div>
+            <div class="arrangement-files"><span>Contract Agreement.pdf</span><span>e-ticket.pdf</span></div>
+        </article>
+
+        <article class="arrangement-card">
+            <header>
+                <div><span class="arrangement-icon hotel-icon" aria-hidden="true">⌂</span><div><h4>Hotel organizer</h4><p>Accommodation and meal scheduling</p></div></div>
+                <span class="arrangement-status">Assigned</span>
+            </header>
+            <div class="arrangement-owner">
+                <img src="images/dummy-traveler-avatar.svg" alt="" />
+                <div><strong>Shun Lai</strong><span>Human Resources Department · +63 917 047 6850</span></div>
+                <time>@Trip.DateFiled</time>
+            </div>
+            <div class="arrangement-files"><span>Hotel Booking.pdf</span><span>Dinner Schedule.pdf</span></div>
+        </article>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public Find.BusinessTrip Trip { get; set; } = default!;
+
+    private string SecondaryVenue => Trip.Category == "Local" ? "TDK Regional Operations Center" : "TDK Technical Exchange Center";
+
+    private string DestinationAirport => Trip.Category == "Local"
+        ? $"{Trip.Destination} Domestic Airport"
+        : $"{Trip.Destination} International Airport";
+
+    private string DestinationCode => Trip.Destination switch
+    {
+        var destination when destination.Contains("Tokyo", StringComparison.OrdinalIgnoreCase) => "NRT",
+        var destination when destination.Contains("Singapore", StringComparison.OrdinalIgnoreCase) => "SIN",
+        var destination when destination.Contains("Cebu", StringComparison.OrdinalIgnoreCase) => "CEB",
+        var destination when destination.Contains("Taipei", StringComparison.OrdinalIgnoreCase) => "TPE",
+        var destination when destination.Contains("Bangkok", StringComparison.OrdinalIgnoreCase) => "BKK",
+        var destination when destination.Contains("Davao", StringComparison.OrdinalIgnoreCase) => "DVO",
+        var destination when destination.Contains("Laguna", StringComparison.OrdinalIgnoreCase) => "MNL",
+        _ => "PVG"
+    };
+
+    private (string Start, string End) TravelPeriod
+    {
+        get
+        {
+            var parts = Trip.TravelDates.Split('–', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length == 1)
+            {
+                return (parts[0], parts[0]);
+            }
+
+            var endParts = parts[1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (endParts.Length < 2)
+            {
+                return (parts[0], parts[1]);
+            }
+
+            var year = endParts[^1];
+            var start = parts[0].Any(char.IsLetter)
+                ? $"{parts[0]} {year}"
+                : $"{parts[0]} {string.Join(' ', endParts.Skip(1))}";
+
+            return (start, parts[1]);
+        }
+    }
+
+    private string OutboundDate => TravelPeriod.Start;
+
+    private string ArrivalDate => TravelPeriod.Start;
+
+    private string ReturnDate => TravelPeriod.End;
+}

@@ -1,0 +1,94 @@
+﻿@page "/"
+@using System.ComponentModel.DataAnnotations
+@inject AuthSessionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Business Travel System - Sign In</PageTitle>
+
+<main class="login-page" data-node-id="6:100">
+    <section class="login-card" aria-labelledby="login-title" data-node-id="207:886">
+        <div class="brand-header" data-node-id="209:988">
+            <div class="brand-mark" data-node-id="I209:988;125:698">
+                <img src="images/app-mark.png" alt="" />
+            </div>
+            <div class="brand-copy">
+                <div class="brand-title">Business Travel System</div>
+                <div class="version-badge">Version 1.0.0.0 Live</div>
+            </div>
+        </div>
+
+        <div class="sign-in-label">Sign In</div>
+        <h1 id="login-title">Welcome</h1>
+
+        <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin" class="login-form">
+            <DataAnnotationsValidator />
+
+            <div class="form-field" data-node-id="125:709">
+                <label for="username">Username</label>
+                <input id="username" class="text-input" autocomplete="username" @bind="loginModel.UserName" @bind:event="oninput" />
+                <ValidationMessage For="@(() => loginModel.UserName)" />
+            </div>
+
+            <div class="form-field" data-node-id="125:723">
+                <label for="password">Password</label>
+                <input id="password" type="password" class="text-input" autocomplete="current-password" @bind="loginModel.Password" @bind:event="oninput" />
+                <ValidationMessage For="@(() => loginModel.Password)" />
+            </div>
+
+            <div class="form-actions">
+                <label class="remember-me" data-node-id="206:838">
+                    <input type="checkbox" class="remember-checkbox" @bind="loginModel.RememberMe" />
+                    <span>Remember me</span>
+                </label>
+
+                <button class="login-button" type="submit" data-node-id="129:405">Login</button>
+            </div>
+        </EditForm>
+
+        <div class="shortcut-grid" data-node-id="208:975">
+            <button class="shortcut-button" type="button" aria-label="Help and Support">
+                <span class="shortcut-icon">
+                    <img src="images/headset.png" alt="" />
+                </span>
+                <span>Help &amp;<br />Support</span>
+            </button>
+            <button class="shortcut-button" type="button" aria-label="User's Manual">
+                <span class="shortcut-icon">
+                    <img src="images/user-manual.png" alt="" />
+                </span>
+                <span>User's<br />Manual</span>
+            </button>
+            <button class="shortcut-button" type="button" aria-label="User Registration">
+                <span class="shortcut-icon">
+                    <img src="images/add-user-male.png" alt="" />
+                </span>
+                <span>User<br />Registration</span>
+            </button>
+        </div>
+
+        <div class="company-logo" data-node-id="125:685">
+            <img src="images/tdk-logo.png" alt="TDK In Everything, Better" />
+        </div>
+    </section>
+</main>
+
+@code {
+    private readonly LoginModel loginModel = new();
+
+    private void HandleLogin()
+    {
+        Session.SignIn(loginModel.UserName ?? string.Empty, loginModel.RememberMe);
+        Navigation.NavigateTo("/dashboard");
+    }
+
+    private sealed class LoginModel
+    {
+        [Required(ErrorMessage = "Username is required.")]
+        public string? UserName { get; set; }
+
+        [Required(ErrorMessage = "Password is required.")]
+        public string? Password { get; set; }
+
+        public bool RememberMe { get; set; }
+    }
+}

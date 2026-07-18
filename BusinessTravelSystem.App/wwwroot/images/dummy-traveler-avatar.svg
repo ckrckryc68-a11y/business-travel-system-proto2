@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Temporary profile portrait">
+  <defs>
+    <linearGradient id="background" x1="18" y1="10" x2="112" y2="122" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DCEEFF"/>
+      <stop offset="1" stop-color="#8EC5F5"/>
+    </linearGradient>
+    <linearGradient id="shirt" x1="38" y1="84" x2="96" y2="128" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#075FC7"/>
+      <stop offset="1" stop-color="#0B3D86"/>
+    </linearGradient>
+    <clipPath id="portrait">
+      <circle cx="64" cy="64" r="64"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#portrait)">
+    <rect width="128" height="128" fill="url(#background)"/>
+    <circle cx="103" cy="24" r="29" fill="#FFFFFF" opacity=".22"/>
+    <circle cx="22" cy="104" r="34" fill="#FFFFFF" opacity=".14"/>
+    <path d="M24 132c2-28 17-43 40-43s38 15 40 43H24Z" fill="url(#shirt)"/>
+    <path d="M51 83h26v20L64 113l-13-10V83Z" fill="#D99E7A"/>
+    <ellipse cx="64" cy="56" rx="25" ry="31" fill="#EDB58F"/>
+    <path d="M39 55c0-22 10-35 28-35 16 0 26 11 26 31-8-2-16-9-20-17-7 10-18 17-34 19v2Z" fill="#17263C"/>
+    <path d="M43 61c2 20 10 31 21 31 13 0 22-13 23-32-5 2-10 2-15 0-11-4-17-10-20-17-3 8-6 14-9 18Z" fill="#EDB58F"/>
+    <ellipse cx="54" cy="61" rx="2.2" ry="2.8" fill="#293341"/>
+    <ellipse cx="75" cy="61" rx="2.2" ry="2.8" fill="#293341"/>
+    <path d="M57 75c5 4 10 4 15 0" fill="none" stroke="#B76F64" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M49 54c4-3 8-3 12-1M69 53c4-2 8-1 11 1" fill="none" stroke="#694535" stroke-width="2" stroke-linecap="round"/>
+    <path d="m51 96 13 17 13-17 8 6-8 30H50l-8-30 9-6Z" fill="#FFFFFF"/>
+    <path d="m58 106 6 7 6-7 4 26H54l4-26Z" fill="#0D4E9D"/>
+  </g>
+</svg>

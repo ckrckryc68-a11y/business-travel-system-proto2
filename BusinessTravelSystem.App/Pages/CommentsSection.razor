@@ -1,0 +1,55 @@
+<section class="detail-section" aria-labelledby="comments-section-title">
+    <header class="comments-heading">
+        <div><span class="tab-kicker">Collaboration</span><h3 id="comments-section-title">Comments</h3><p>Keep questions and decisions connected to this trip.</p></div>
+        <span>@CommentCount comments</span>
+    </header>
+    <div class="comment-list">
+        @if (!string.IsNullOrWhiteSpace(postedComment))
+        {
+            <article class="is-current-user">
+                <img class="comment-avatar" src="images/dummy-traveler-avatar.svg" alt="" />
+                <div class="comment-bubble"><header><span><strong>Olivia Rodrigo</strong><span class="comment-role">You</span></span><time>Just now</time></header><p>@postedComment</p></div>
+            </article>
+        }
+        <article>
+            <img class="comment-avatar" src="images/dummy-traveler-avatar.svg" alt="" />
+            <div class="comment-bubble"><header><span><strong>@Trip.Reviewer</strong><span class="comment-role reviewer">Reviewer</span></span><time>@Trip.LastUpdated</time></header><p>Please confirm the final activity schedule before ticketing.</p></div>
+        </article>
+        <article>
+            <img class="comment-avatar" src="images/dummy-traveler-avatar.svg" alt="" />
+            <div class="comment-bubble"><header><span><strong>@Trip.Applicant</strong><span class="comment-role applicant">Applicant</span></span><time>@Trip.DateFiled</time></header><p>The working itinerary and initial estimate are attached to this application.</p></div>
+        </article>
+    </div>
+    <form class="comment-form" @onsubmit="SubmitComment" @onsubmit:preventDefault>
+        <div class="composer-heading"><img src="images/dummy-traveler-avatar.svg" alt="" /><div><label for="trip-comment">Add a comment</label><span>Use @@ to mention a reviewer or teammate.</span></div></div>
+        <textarea id="trip-comment" rows="4" maxlength="500" placeholder="Ask a question or share an update…" @bind="commentDraft" @bind:event="oninput"></textarea>
+        <footer><span>@commentDraft.Length / 500</span><button type="submit" disabled="@string.IsNullOrWhiteSpace(commentDraft)">Post comment</button></footer>
+    </form>
+    @if (commentPosted)
+    {
+        <p class="comment-confirmation" role="status">Your comment was added to this trip.</p>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public Find.BusinessTrip Trip { get; set; } = default!;
+
+    private string commentDraft = string.Empty;
+    private bool commentPosted;
+    private string? postedComment;
+
+    private int CommentCount => 2 + (postedComment is null ? 0 : 1);
+
+    private void SubmitComment()
+    {
+        if (string.IsNullOrWhiteSpace(commentDraft))
+        {
+            return;
+        }
+
+        postedComment = commentDraft.Trim();
+        commentDraft = string.Empty;
+        commentPosted = true;
+    }
+}

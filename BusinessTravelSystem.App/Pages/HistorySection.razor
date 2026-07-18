@@ -1,0 +1,82 @@
+<section class="history-section" aria-labelledby="approvals-title">
+    <div class="history-section-heading">
+        <div><span class="tab-kicker">Workflow</span><h3 id="approvals-title">Approvals</h3><p>Track the application through each decision stage.</p></div>
+        <span class="approval-count">3 stages</span>
+    </div>
+
+    <div class="approval-progress-card">
+        <div><span>Current stage</span><strong>@CurrentStageLabel</strong><small>Owned by Finance &amp; Travel Desk</small></div>
+        <div class="progress-summary"><strong>@CompletedStageCount of 3 complete</strong><span class="progress-track"><span style="width: @CompletionPercent%"></span></span></div>
+    </div>
+
+    <div class="approval-list">
+        <article class="approval-card is-complete">
+            <span class="approval-mark" aria-hidden="true">✓</span>
+            <div>
+                <header><strong>Application submitted</strong><span>Completed</span></header>
+                <p>@Trip.Applicant submitted @Trip.Id for review.</p>
+                <footer><span>Step 1 · @Trip.Applicant</span><time>@Trip.DateFiled</time></footer>
+            </div>
+        </article>
+
+        <article class="approval-card is-complete">
+            <span class="approval-mark" aria-hidden="true">✓</span>
+            <div>
+                <header><strong>Department approval</strong><span>Approved</span></header>
+                <p>The trip purpose and department allocation were confirmed.</p>
+                <footer><span>Step 2 · @Trip.Reviewer</span><time>@Trip.LastUpdated</time></footer>
+            </div>
+        </article>
+
+        <article class="approval-card @(Trip.Status == "Complete" ? "is-complete" : "is-current")" aria-current="@(Trip.Status == "Complete" ? null : "step")">
+            <span class="approval-mark" aria-hidden="true">@(Trip.Status == "Complete" ? "✓" : "3")</span>
+            <div>
+                <header><strong>Finance and travel review</strong><span>@FinalApprovalStatus</span></header>
+                <p>Budget, costing, and travel arrangements are being validated.</p>
+                <footer><span>Step 3 · Finance &amp; Travel Desk</span><time>Current stage</time></footer>
+            </div>
+        </article>
+    </div>
+
+    <div class="history-section-heading audit-heading">
+        <div><h3>Audit Logs</h3><p>System and user activity, newest first.</p></div>
+        <span class="audit-total">4 events</span>
+    </div>
+
+    <div class="audit-list">
+        <article>
+            <span class="audit-icon update-icon" aria-hidden="true"></span>
+            <div><header><strong>Costing details updated <span class="event-type">Costing</span></strong><time>@Trip.LastUpdated</time></header><p>@Trip.Reviewer updated the release summary and supporting remarks.</p></div>
+        </article>
+        <article>
+            <span class="audit-icon route-icon" aria-hidden="true"></span>
+            <div><header><strong>Application routed <span class="event-type">Workflow</span></strong><time>@Trip.DateFiled</time></header><p>The workflow assigned the application to the department reviewer.</p></div>
+        </article>
+        <article>
+            <span class="audit-icon attachment-icon" aria-hidden="true"></span>
+            <div><header><strong>Documents attached <span class="event-type">Files</span></strong><time>@Trip.DateFiled</time></header><p>Itinerary, costing sheet, and arrangement documents were added.</p></div>
+        </article>
+        <article>
+            <span class="audit-icon create-icon" aria-hidden="true"></span>
+            <div><header><strong>Application created <span class="event-type">Application</span></strong><time>@Trip.DateFiled</time></header><p>@Trip.Applicant created business trip @Trip.Id.</p></div>
+        </article>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public Find.BusinessTrip Trip { get; set; } = default!;
+
+    private string FinalApprovalStatus => Trip.Status == "Complete" ? "Approved" : Trip.Status == "Hold" ? "On hold" : "In review";
+
+    private int CompletedStageCount => Trip.Status == "Complete" ? 3 : 2;
+
+    private int CompletionPercent => Trip.Status == "Complete" ? 100 : 67;
+
+    private string CurrentStageLabel => Trip.Status switch
+    {
+        "Complete" => "Approved for travel",
+        "Hold" => "Finance and travel review on hold",
+        _ => "Finance and travel review"
+    };
+}

@@ -1,0 +1,126 @@
+<section class="detail-section" aria-labelledby="general-section-title">
+    <header class="tab-intro">
+        <div>
+            <span class="tab-kicker">General</span>
+            <h3 id="general-section-title">Trip overview</h3>
+            <p>Key application, travel, and ownership details at a glance.</p>
+        </div>
+        <span class="tab-status status-@Trip.Status.ToLowerInvariant()">@Trip.Status</span>
+    </header>
+
+    <div class="overview-grid">
+        <article>
+            <span>Application ID</span>
+            <strong>@Trip.Id</strong>
+        </article>
+        <article>
+            <span>Travel period</span>
+            <strong>@Trip.TravelDates</strong>
+        </article>
+        <article>
+            <span>Estimated cost</span>
+            <strong>@Trip.EstimatedCost</strong>
+        </article>
+        <article>
+            <span>Trip category</span>
+            <strong>@Trip.Category</strong>
+        </article>
+    </div>
+
+    <div class="section-heading-row business-heading">
+        <h3>Business details</h3>
+    </div>
+    <div class="information-grid">
+        <dl>
+            <div>
+                <dt>Title</dt>
+                <dd>@Trip.Title</dd>
+            </div>
+            <div>
+                <dt>Budget Allocation</dt>
+                <dd>@Trip.BudgetAllocation</dd>
+            </div>
+            <div>
+                <dt>Cost Center</dt>
+                <dd>@Trip.CostCenter</dd>
+            </div>
+        </dl>
+        <dl>
+            <div>
+                <dt>Purpose of Trip</dt>
+                <dd>@Trip.Purpose</dd>
+            </div>
+            <div>
+                <dt>Justification</dt>
+                <dd>Payment for required travel, accommodation, and activity costs.</dd>
+            </div>
+            <div>
+                <dt>Description</dt>
+                <dd>@Trip.Description</dd>
+            </div>
+        </dl>
+    </div>
+
+    <div class="section-heading-row">
+        <h3 id="attachments-section-title">Attachments</h3>
+        <span>1 file</span>
+    </div>
+    <div class="attachment-requirement-note" role="note">
+        <span class="requirement-note-icon" aria-hidden="true">!</span>
+        <span class="requirement-note-copy">
+            <strong>Required attachments</strong>
+            <span>Some files are required before this trip can proceed for approval.</span>
+        </span>
+        <strong class="requirement-progress">1 of 1 provided</strong>
+    </div>
+    <ul class="attachment-list" aria-labelledby="attachments-section-title">
+        <li class="attachment-card">
+            <span class="attachment-file-icon" aria-hidden="true">PDF</span>
+            <span class="attachment-copy">
+                <span class="attachment-name-row">
+                    <strong>Contract Agreement.pdf</strong>
+                    <span class="required-tag">Required</span>
+                </span>
+                <span class="attachment-file-meta">PDF document · 1.2 MB</span>
+                <span class="attachment-upload-details">
+                    <span>Uploaded by <strong>Olivia Rodrigo</strong></span>
+                    <span>15 June 2026 at 2:45 PM</span>
+                </span>
+            </span>
+            <span class="attachment-status">
+                <span aria-hidden="true">✓</span>
+                Uploaded
+            </span>
+        </li>
+    </ul>
+
+    <div class="section-heading-row application-heading">
+        <h3>Application owner</h3>
+        <span>Filed @Trip.DateFiled</span>
+    </div>
+    <div class="application-card">
+        <img class="application-avatar" src="images/dummy-traveler-avatar.svg" alt="" />
+        <dl>
+            <div>
+                <dt>Applicant</dt>
+                <dd>@Trip.Applicant</dd>
+            </div>
+            <div>
+                <dt>Department</dt>
+                <dd>@Trip.Department</dd>
+            </div>
+        </dl>
+        <dl class="filed-date">
+            <div>
+                <dt>Reviewer</dt>
+                <dd>@Trip.Reviewer</dd>
+            </div>
+        </dl>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public Find.BusinessTrip Trip { get; set; } = default!;
+
+}

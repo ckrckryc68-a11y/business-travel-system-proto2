@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Business Travel System</title>
+    <base href="/" />
+    <link rel="stylesheet" href="css/app.css?v=20260710-balanced-map-controls" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="BusinessTravelSystem.App.styles.css?v=20260710-balanced-map-controls" rel="stylesheet" />
+</head>
+
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script>
+        (() => {
+            const root = document.documentElement;
+            const setCursor = (x, y) => {
+                root.style.setProperty("--cursor-x", `${x}px`);
+                root.style.setProperty("--cursor-y", `${y}px`);
+            };
+
+            window.addEventListener("pointermove", event => {
+                setCursor(event.clientX, event.clientY);
+            }, { passive: true });
+
+            window.addEventListener("pointerleave", () => {
+                root.style.setProperty("--cursor-x", "50vw");
+                root.style.setProperty("--cursor-y", "45vh");
+            }, { passive: true });
+        })();
+    </script>
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+
+</html>

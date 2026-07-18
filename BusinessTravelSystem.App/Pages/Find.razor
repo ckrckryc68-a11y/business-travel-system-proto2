@@ -1,0 +1,506 @@
+@page "/find"
+@inject AuthSessionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Business Travel System - Find Trips</PageTitle>
+
+<main class="dashboard-page find-shell">
+    <header class="dashboard-topbar">
+        <div class="topbar-menu">
+            <button class="topbar-brand-button" type="button" aria-haspopup="true" aria-expanded="@showLogoMenu" @onclick="ToggleLogoMenu">
+                <span class="topbar-brand-mark">
+                    <img src="images/app-mark.png" alt="" />
+                </span>
+                <span class="topbar-brand-copy">
+                    <span class="topbar-brand-title">Business Travel System</span>
+                    <span class="topbar-version">Version 1.0.0.0 Live</span>
+                </span>
+                <span class="chevron" aria-hidden="true"></span>
+            </button>
+
+            @if (showLogoMenu)
+            {
+                <div class="topbar-dropdown topbar-dropdown-left" role="menu">
+                    @foreach (var module in Modules)
+                    {
+                        <button class="dropdown-item @(module.Key == "find" ? "is-current" : null)" type="button" role="menuitem" @onclick="() => OpenModule(module.Key)">
+                            <span class="dropdown-icon icon-@module.Key" aria-hidden="true">
+                                @if (module.NotificationCount > 0)
+                                {
+                                    <span class="dropdown-badge">@module.NotificationCount</span>
+                                }
+                            </span>
+                            <span class="dropdown-copy">
+                                <span class="dropdown-title">@module.Label</span>
+                            </span>
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="tdk-topbar-logo">
+            <img src="images/tdk-logo.png" alt="TDK In Everything, Better" />
+        </div>
+
+        <div class="topbar-menu topbar-user-menu">
+            <button class="user-menu-button" type="button" aria-label="User menu for @UserDisplayName" aria-haspopup="true" aria-expanded="@showUserMenu" @onclick="ToggleUserMenu">
+                <img class="user-avatar" src="images/dummy-traveler-avatar.svg" alt="" />
+                <span class="user-name">@UserDisplayName</span>
+                <span class="chevron" aria-hidden="true"></span>
+            </button>
+
+            @if (showUserMenu)
+            {
+                <div class="topbar-dropdown topbar-dropdown-right user-dropdown" role="menu">
+                    <div class="user-dropdown-card" role="none">
+                        <img class="user-avatar dropdown-user-avatar" src="images/dummy-traveler-avatar.svg" alt="" />
+                        <span>
+                            <span class="dropdown-title">@UserDisplayName</span>
+                            <span class="dropdown-description">Signed in</span>
+                        </span>
+                    </div>
+                    <button class="dropdown-item dropdown-item-danger" type="button" role="menuitem" @onclick="SignOut">
+                        <span class="dropdown-icon icon-logout" aria-hidden="true"></span>
+                        <span class="dropdown-copy">
+                            <span class="dropdown-title">Logout</span>
+                            <span class="dropdown-description">Return to sign in</span>
+                        </span>
+                    </button>
+                </div>
+            }
+        </div>
+    </header>
+
+    <div class="find-page @(isMobileDetailOpen ? "is-mobile-detail-open" : null)">
+        <div class="find-page-heading">
+            <div class="find-title-group">
+                <button class="find-back-button" type="button" aria-label="Back to Business Travel Home" title="Back to Business Travel Home" @onclick="BackToDashboard">
+                    <span aria-hidden="true">←</span>
+                </button>
+                <div class="find-title-copy">
+                    <span>Business Trips</span>
+                    <h1>Find business trips</h1>
+                </div>
+            </div>
+
+            <button class="add-trip-button" type="button" title="Add a business trip" @onclick="AddBusinessTrip">
+                <span aria-hidden="true">＋</span>
+                New trip
+            </button>
+        </div>
+
+        <form class="find-search-panel" @onsubmit="RunSearch" @onsubmit:preventDefault>
+            <label class="find-field keyword-field" for="trip-keyword">
+                <span>Keyword</span>
+                <span class="search-input-wrap">
+                    <span class="search-glyph" aria-hidden="true"></span>
+                    <input id="trip-keyword" type="search" placeholder="Trip ID, traveler, destination, or purpose" autocomplete="off" @bind="searchTerm" @bind:event="oninput" />
+                    @if (!string.IsNullOrWhiteSpace(searchTerm))
+                    {
+                        <button class="clear-query-button" type="button" aria-label="Clear keyword" @onclick="ClearKeyword">×</button>
+                    }
+                </span>
+            </label>
+
+            <label class="find-field category-field" for="trip-category">
+                <span>Category</span>
+                <select id="trip-category" @bind="selectedCategory">
+                    <option value="All">All categories</option>
+                    <option value="Overseas">Overseas</option>
+                    <option value="Local">Local</option>
+                </select>
+            </label>
+
+            <button class="find-button" type="submit">
+                <span class="button-search-glyph" aria-hidden="true"></span>
+                Find
+            </button>
+        </form>
+
+        <section class="find-workspace @(isMobileDetailOpen ? "is-mobile-detail-open" : null)" aria-label="Business trip search results">
+            <aside class="results-column" aria-labelledby="results-heading">
+                <div class="results-summary">
+                    <div>
+                        <h2 id="results-heading">Business trips</h2>
+                        <p role="status" aria-live="polite">
+                            <strong>@FilteredTrips.Count</strong> result@(FilteredTrips.Count == 1 ? string.Empty : "s")
+                        </p>
+                    </div>
+                    <div class="results-summary-actions">
+                        <button class="approval-filter-button @(showMyApprovalsOnly ? "is-active" : null)" type="button" aria-pressed="@showMyApprovalsOnly" @onclick="ToggleMyApprovals">
+                            <span class="approval-filter-icon" aria-hidden="true">✓</span>
+                            <span>My approvals</span>
+                            <span class="approval-filter-count">@ApprovalResultCount</span>
+                        </button>
+                        @if (HasActiveFilters)
+                        {
+                            <button class="clear-results-filters" type="button" @onclick="ClearFilters">Clear</button>
+                        }
+                    </div>
+                </div>
+
+                <div class="result-list">
+                    @foreach (var searchResult in FilteredTrips)
+                    {
+                        <button class="trip-result-card @(EffectiveSelectedTrip?.Id == searchResult.Id ? "is-selected" : null)" type="button" aria-pressed="@(EffectiveSelectedTrip?.Id == searchResult.Id)" @onclick="() => SelectTrip(searchResult.Id)">
+                            <img class="trip-card-avatar" src="images/dummy-traveler-avatar.svg" alt="" />
+                            <span class="trip-card-topline">
+                                <strong class="trip-traveler">@searchResult.Traveler</strong>
+                                <span class="status-pill status-@GetStatusClass(searchResult)">@GetStatus(searchResult)</span>
+                            </span>
+                            <span class="trip-purpose">@searchResult.Summary</span>
+                            <span class="trip-card-meta">
+                                <span class="trip-destination">@searchResult.Destination</span>
+                                <span class="trip-date">@searchResult.TravelDates</span>
+                            </span>
+                            <span class="trip-card-footer">
+                                <span class="trip-id">@searchResult.Id</span>
+                                @if (IsForMyApproval(searchResult))
+                                {
+                                    <span class="approval-signal">
+                                        <span class="approval-signal-icon" aria-hidden="true">✓</span>
+                                        <span>Your approval</span>
+                                    </span>
+                                }
+                            </span>
+                        </button>
+                    }
+
+                    @if (FilteredTrips.Count == 0)
+                    {
+                        <div class="no-results-card">
+                            <span class="no-results-icon" aria-hidden="true"></span>
+                            <h2>No matching trips</h2>
+                            <p>Try a traveler name, destination, trip ID, or a broader category.</p>
+                            <button type="button" @onclick="ClearFilters">Reset search</button>
+                        </div>
+                    }
+                </div>
+            </aside>
+
+            <section class="trip-detail-column" aria-label="Selected trip details">
+                @if (EffectiveSelectedTrip is { } trip)
+                {
+                    <button class="mobile-results-back" type="button" @onclick="CloseMobileDetail">
+                        <span aria-hidden="true">←</span>
+                        <span>Back to results</span>
+                        <strong>@trip.Id</strong>
+                    </button>
+
+                    <article class="trip-hero">
+                        <img class="traveler-avatar" src="images/dummy-traveler-avatar.svg" alt="" />
+                        <div class="trip-hero-copy">
+                            <div class="trip-title-line">
+                                <h2 id="selected-trip-heading">@trip.Traveler</h2>
+                                <span class="status-pill status-@GetStatusClass(trip)">@GetStatus(trip)</span>
+                            </div>
+                            <p>@trip.Destination <span aria-hidden="true">|</span> @trip.Summary</p>
+                            <div class="trip-quick-actions" aria-label="Trip actions">
+                                <button type="button" title="Return application" aria-label="Return application" @onclick="() => ShowReturnMessage(trip)">
+                                    <span class="quick-action-icon" aria-hidden="true">↩</span>
+                                    <span>Return</span>
+                                </button>
+                                <button type="button" title="Remove from queue" aria-label="Remove from queue" @onclick="() => ShowRemoveMessage(trip)">
+                                    <span class="quick-action-icon" aria-hidden="true">×</span>
+                                    <span>Remove</span>
+                                </button>
+                                <button type="button" title="@(GetStatus(trip) == "Hold" ? "Resume trip" : "Place on hold")" aria-label="@(GetStatus(trip) == "Hold" ? "Resume trip" : "Place on hold")" @onclick="() => ShowHoldMessage(trip)">
+                                    <span class="quick-action-icon" aria-hidden="true">@(GetStatus(trip) == "Hold" ? "▶" : "Ⅱ")</span>
+                                    <span>@(GetStatus(trip) == "Hold" ? "Resume" : "Hold")</span>
+                                </button>
+                                <button type="button" title="Mark unavailable" aria-label="Mark unavailable" @onclick="() => ShowAvailabilityMessage(trip)">
+                                    <span class="quick-action-icon" aria-hidden="true">⊘</span>
+                                    <span>Unavailable</span>
+                                </button>
+                            </div>
+                        </div>
+                        @if (trip.NeedsMyApproval || IsApproved(trip))
+                        {
+                            <button class="approve-button" type="button" disabled="@IsApproved(trip)" @onclick="() => ApproveTrip(trip)">
+                                @(IsApproved(trip) ? "Approved" : "Approve")
+                            </button>
+                        }
+                    </article>
+
+                    @if (!string.IsNullOrWhiteSpace(actionMessage))
+                    {
+                        <div class="action-message" role="status">
+                            <span>@actionMessage</span>
+                            <button type="button" aria-label="Dismiss notification" @onclick="DismissActionMessage">×</button>
+                        </div>
+                    }
+
+                    <nav class="detail-tabs" aria-label="Trip detail sections" role="tablist">
+                        @foreach (var tab in DetailTabs)
+                        {
+                            <button class="@(activeTab == tab ? "is-active" : null)" type="button" role="tab" aria-selected="@(activeTab == tab)" @onclick="() => SelectTab(tab)">@tab</button>
+                        }
+                    </nav>
+
+                    <article class="detail-panel" @key="trip.Id + activeTab">
+                        @switch (activeTab)
+                        {
+                            case "Trip":
+                                <TripSection Trip="trip" />
+                                break;
+                            case "Costing":
+                                <CostingSection Trip="trip" />
+                                break;
+                            case "History":
+                                <HistorySection Trip="trip" />
+                                break;
+                            case "Comments":
+                                <CommentsSection Trip="trip" />
+                                break;
+                            default:
+                                <GeneralSection Trip="trip" />
+                                break;
+                        }
+                    </article>
+                }
+                else
+                {
+                    <div class="empty-detail-state">
+                        <span class="empty-detail-mark" aria-hidden="true"></span>
+                        <h2>Find a business trip</h2>
+                        <p>Adjust the search above to view a trip's application, schedule, costing, and activity.</p>
+                    </div>
+                }
+            </section>
+        </section>
+    </div>
+</main>
+
+@code {
+    private bool showLogoMenu;
+    private bool showUserMenu;
+    private bool isMobileDetailOpen;
+    private bool showMyApprovalsOnly;
+    private string searchTerm = string.Empty;
+    private string submittedSearchTerm = string.Empty;
+    private string selectedCategory = "All";
+    private string submittedCategory = "All";
+    private string? selectedTripId = Trips[0].Id;
+    private string activeTab = "General";
+    private string? actionMessage;
+    private readonly HashSet<string> approvedTripIds = new(StringComparer.OrdinalIgnoreCase);
+
+    private string UserDisplayName => string.IsNullOrWhiteSpace(Session.UserName) ? "Olivia Rodrigo" : Session.UserName.Trim();
+
+    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(submittedSearchTerm) || submittedCategory != "All" || showMyApprovalsOnly;
+
+    private IReadOnlyList<BusinessTrip> SearchFilteredTrips => Trips
+        .Where(trip => submittedCategory == "All" || trip.Category.Equals(submittedCategory, StringComparison.OrdinalIgnoreCase))
+        .Where(MatchesSearch)
+        .ToArray();
+
+    private IReadOnlyList<BusinessTrip> FilteredTrips => SearchFilteredTrips
+        .Where(trip => !showMyApprovalsOnly || IsForMyApproval(trip))
+        .ToArray();
+
+    private int ApprovalResultCount => SearchFilteredTrips.Count(IsForMyApproval);
+
+    private BusinessTrip? EffectiveSelectedTrip =>
+        FilteredTrips.FirstOrDefault(trip => trip.Id == selectedTripId) ?? FilteredTrips.FirstOrDefault();
+
+    protected override void OnInitialized()
+    {
+        if (!Session.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private void ToggleLogoMenu()
+    {
+        showLogoMenu = !showLogoMenu;
+        showUserMenu = false;
+    }
+
+    private void ToggleUserMenu()
+    {
+        showUserMenu = !showUserMenu;
+        showLogoMenu = false;
+    }
+
+    private void OpenModule(string key)
+    {
+        showLogoMenu = false;
+
+        if (key != "find")
+        {
+            Navigation.NavigateTo($"/dashboard?module={Uri.EscapeDataString(key)}");
+        }
+    }
+
+    private void RunSearch()
+    {
+        submittedSearchTerm = searchTerm.Trim();
+        submittedCategory = selectedCategory;
+        selectedTripId = FilteredTrips.FirstOrDefault()?.Id;
+        activeTab = "General";
+        actionMessage = null;
+        isMobileDetailOpen = false;
+    }
+
+    private bool MatchesSearch(BusinessTrip trip)
+    {
+        if (string.IsNullOrWhiteSpace(submittedSearchTerm))
+        {
+            return true;
+        }
+
+        var term = submittedSearchTerm.Trim();
+        return trip.Id.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || trip.Traveler.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || trip.Destination.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || trip.Summary.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || trip.Purpose.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || trip.Department.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || trip.CostCenter.Contains(term, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void SelectTrip(string tripId)
+    {
+        selectedTripId = tripId;
+        activeTab = "General";
+        actionMessage = null;
+        isMobileDetailOpen = true;
+    }
+
+    private void CloseMobileDetail()
+    {
+        isMobileDetailOpen = false;
+        actionMessage = null;
+    }
+
+    private void ToggleMyApprovals()
+    {
+        showMyApprovalsOnly = !showMyApprovalsOnly;
+        selectedTripId = FilteredTrips.FirstOrDefault()?.Id;
+        activeTab = "General";
+        actionMessage = null;
+        isMobileDetailOpen = false;
+    }
+
+    private void SelectTab(string tab)
+    {
+        activeTab = tab;
+        actionMessage = null;
+    }
+
+    private void ClearKeyword()
+    {
+        searchTerm = string.Empty;
+        submittedSearchTerm = string.Empty;
+        selectedTripId = FilteredTrips.FirstOrDefault()?.Id;
+        isMobileDetailOpen = false;
+    }
+
+    private void ClearFilters()
+    {
+        searchTerm = string.Empty;
+        submittedSearchTerm = string.Empty;
+        selectedCategory = "All";
+        submittedCategory = "All";
+        showMyApprovalsOnly = false;
+        selectedTripId = Trips[0].Id;
+        activeTab = "General";
+        actionMessage = null;
+        isMobileDetailOpen = false;
+    }
+
+    private void ApproveTrip(BusinessTrip trip)
+    {
+        approvedTripIds.Add(trip.Id);
+        actionMessage = $"{trip.Id} was approved for the prototype workflow.";
+
+        if (showMyApprovalsOnly)
+        {
+            selectedTripId = FilteredTrips.FirstOrDefault()?.Id;
+            isMobileDetailOpen = false;
+        }
+    }
+
+    private bool IsApproved(BusinessTrip trip) => approvedTripIds.Contains(trip.Id);
+
+    private bool IsForMyApproval(BusinessTrip trip) => trip.NeedsMyApproval && !IsApproved(trip);
+
+    private static string GetStatus(BusinessTrip trip) => trip.Status;
+
+    private string GetStatusClass(BusinessTrip trip) => GetStatus(trip).ToLowerInvariant().Replace(" ", "-");
+
+    private void ShowActionMessage(string message) => actionMessage = message;
+
+    private void ShowReturnMessage(BusinessTrip trip) => ShowActionMessage($"{trip.Id} is ready to return to the applicant.");
+
+    private void ShowRemoveMessage(BusinessTrip trip) => ShowActionMessage($"{trip.Id} remains in the queue. No record was deleted.");
+
+    private void ShowHoldMessage(BusinessTrip trip) => ShowActionMessage(
+        GetStatus(trip) == "Hold"
+            ? $"{trip.Id} is ready to resume review."
+            : $"{trip.Id} was marked for hold review.");
+
+    private void ShowAvailabilityMessage(BusinessTrip trip) => ShowActionMessage($"Availability review requested for {trip.Id}.");
+
+    private void DismissActionMessage() => actionMessage = null;
+
+    private void BackToDashboard() => Navigation.NavigateTo("/dashboard");
+
+    private void AddBusinessTrip() => Navigation.NavigateTo("/dashboard?module=apply");
+
+    private void SignOut()
+    {
+        Session.SignOut();
+        Navigation.NavigateTo("/");
+    }
+
+    private static readonly string[] DetailTabs = { "General", "Trip", "Costing", "History", "Comments" };
+
+    private static readonly FindModule[] Modules =
+    {
+        new("find", "Find", 0),
+        new("apply", "Apply", 0),
+        new("approval", "Approvals", 7),
+        new("reports", "Reports", 0)
+    };
+
+    private static readonly BusinessTrip[] Trips =
+    {
+        new("BTS-T131-0037", "Juan Dela Cruz", "China", "Overseas", "Ongoing", "Technical Exchange 3 Day Training", "Business", "To benchmark legal, compliance, and internal-audit procedures and the end-to-end process flow.", "Yes", "TSC370", "Yes", "Corporate Management System - Common", "Olivia Rodrigo", "Information Systems Department", "15 June 2026", "22–25 July 2026", "Shanghai Innovation Center", "PHP 148,500", "Flight, hotel, ground transport, and training fee", "Aileen Santos", "12 June 2026", true),
+        new("BTS-T131-0042", "Maria Santos", "Tokyo, Japan", "Overseas", "Ongoing", "Supplier Quality Alignment", "Supplier Visit", "To align quality controls with the regional supplier team before the next production cycle.", "Yes", "QA210", "No", "Quality Systems - Regional", "Maria Santos", "Quality Assurance", "18 June 2026", "04–08 August 2026", "TDK Tokyo Office", "PHP 192,000", "Airfare, accommodation, local transit, and meals", "Roberto Lim", "17 June 2026", true),
+        new("BTS-L204-0018", "Carlo Dizon", "Cebu, Philippines", "Local", "Ongoing", "Plant Process Audit", "Audit", "To complete the scheduled operational audit and validate corrective actions with the Cebu plant.", "No", "OPS440", "No", "Operational Excellence", "Carlo Dizon", "Production Operations", "21 June 2026", "10–12 July 2026", "TDK Cebu Plant", "PHP 38,750", "Domestic flight, hotel, transport, and meals", "Anna Reyes", "20 June 2026", false),
+        new("BTS-T131-0049", "Lena Garcia", "Taipei, Taiwan", "Overseas", "Hold", "Equipment Service Certification", "Training", "To complete technical certification for the newly deployed service equipment.", "Yes", "SVC115", "Yes", "Field Service Enablement", "Lena Garcia", "Technical Services", "28 June 2026", "28 July–01 August 2026", "Taipei Technical Center", "PHP 165,400", "Airfare, hotel, certification fee, and local transport", "Ken Ramos", "27 June 2026", false),
+        new("BTS-T088-0091", "Paolo Lim", "Bangkok, Thailand", "Overseas", "Complete", "Regional Procurement Summit", "Conference", "To finalize regional purchasing agreements and review second-half sourcing targets.", "Yes", "PRC520", "No", "Regional Procurement", "Paolo Lim", "Procurement", "03 June 2026", "09–12 July 2026", "Bangkok Convention Centre", "PHP 132,800", "Airfare, conference fee, hotel, and meals", "Mia Santos", "02 June 2026", false),
+        new("BTS-L204-0024", "Ana Reyes", "Laguna, Philippines", "Local", "Complete", "Quarterly Quality Review", "Review", "To present quarterly quality findings and agree on the next corrective-action cycle.", "No", "QA230", "No", "Quality Governance", "Ana Reyes", "Quality Assurance", "26 May 2026", "10 July 2026", "Laguna Manufacturing Site", "PHP 12,600", "Ground transport and meals", "Bea Flores", "25 May 2026", false),
+        new("BTS-T131-0053", "Ari Cruz", "Singapore", "Overseas", "Ongoing", "Customer Success Workshop", "Workshop", "To standardize regional onboarding and support practices for enterprise customers.", "Yes", "SLS330", "No", "Customer Success - APAC", "Ari Cruz", "Sales", "02 July 2026", "16–20 July 2026", "Singapore Regional Office", "PHP 154,300", "Airfare, hotel, workshop fee, and meals", "Lance Garcia", "01 July 2026", true),
+        new("BTS-L310-0007", "Jessa Reyes", "Davao, Philippines", "Local", "Ongoing", "Finance Controls Workshop", "Workshop", "To roll out the revised travel and expense control procedures to the regional finance team.", "No", "FIN105", "No", "Finance Controls", "Jessa Reyes", "Finance", "05 July 2026", "29–30 July 2026", "Davao Business Center", "PHP 24,900", "Domestic flight, transport, and meals", "Marco Lee", "04 July 2026", false)
+    };
+
+    public sealed record BusinessTrip(
+        string Id,
+        string Traveler,
+        string Destination,
+        string Category,
+        string Status,
+        string Summary,
+        string Title,
+        string Purpose,
+        string BudgetAllocation,
+        string CostCenter,
+        string ContractRequired,
+        string Description,
+        string Applicant,
+        string Department,
+        string DateFiled,
+        string TravelDates,
+        string Venue,
+        string EstimatedCost,
+        string CostBreakdown,
+        string Reviewer,
+        string LastUpdated,
+        bool NeedsMyApproval);
+
+    private sealed record FindModule(string Key, string Label, int NotificationCount);
+}

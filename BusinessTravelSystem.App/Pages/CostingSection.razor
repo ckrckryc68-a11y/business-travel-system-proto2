@@ -1,0 +1,78 @@
+<section class="costing-section" aria-labelledby="costing-section-title">
+    <header class="tab-intro">
+        <div>
+            <span class="tab-kicker">Costing</span>
+            <h3 id="costing-section-title">Release summary</h3>
+            <p>Released amounts are totaled from the expense breakdown and grouped by currency.</p>
+        </div>
+        <span class="cost-status">@ReleaseTotals.Count currencies</span>
+    </header>
+
+    <div class="cost-summary-grid" aria-label="Released totals by currency">
+        @foreach (var total in ReleaseTotals)
+        {
+            <article>
+                <span>Released in @total.Currency</span>
+                <strong>@FormatAmount(total.Amount) @total.Currency</strong>
+                <small>@total.ItemCount expense @(total.ItemCount == 1 ? "item" : "items")</small>
+            </article>
+        }
+    </div>
+
+    <div class="currency-note" role="note"><span aria-hidden="true">i</span> Foreign-currency items use the exchange rate recorded when the costing was reviewed.</div>
+
+    <div class="section-heading-row"><div><h3>Expense breakdown</h3><p>Three planned expense categories</p></div><span>3 items</span></div>
+    <div class="breakdown-list">
+        <article class="breakdown-card">
+            <header><div><span class="cost-icon hotel-cost" aria-hidden="true">⌂</span><div><h4>Hotel stay</h4><small>Accommodation</small></div></div><strong>@FormatCost(HotelCost)</strong></header>
+            <div class="wide-field"><span>Title</span><p>@Trip.CostBreakdown</p></div>
+            <div class="cost-fields hotel-fields">
+                <div><span>Name of Hotel</span><p>Silver Land Hotel</p></div>
+                <div><span>Length of Stay</span><p>3</p></div>
+                <div><span>Currency</span><p>@HotelCost.Currency</p></div>
+                <div><span>Exchange Rate</span><p>30.5</p></div>
+                <div><span>Amount</span><p>169.136</p></div>
+            </div>
+        </article>
+
+        <article class="breakdown-card">
+            <header><div><span class="cost-icon transport-cost" aria-hidden="true">↔</span><div><h4>Transportation fee</h4><small>Ground transport</small></div></div><strong>@FormatCost(TransportationCost)</strong></header>
+            <div class="wide-field"><span>Title</span><p>Airport shuttle and local transportation.</p></div>
+            <div class="cost-fields">
+                <div><span>Currency</span><p>@TransportationCost.Currency</p></div>
+                <div><span>Exchange Rate</span><p>2</p></div>
+                <div><span>Amount</span><p>50</p></div>
+            </div>
+        </article>
+
+        <article class="breakdown-card">
+            <header><div><span class="cost-icon allowance-cost" aria-hidden="true">₱</span><div><h4>@AllowanceTitle</h4><small>Traveler allowance</small></div></div><strong>@FormatCost(AllowanceCost)</strong></header>
+            <div class="wide-field"><span>Title</span><p>Allowance released for the approved travel period.</p></div>
+        </article>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public Find.BusinessTrip Trip { get; set; } = default!;
+
+    private static readonly CostLine HotelCost = new(350m, "USD");
+    private static readonly CostLine TransportationCost = new(100m, "USD");
+    private static readonly CostLine AllowanceCost = new(2500m, "PHP");
+    private static readonly CostLine[] CostLines = [HotelCost, TransportationCost, AllowanceCost];
+
+    private static IReadOnlyList<ReleaseTotal> ReleaseTotals => CostLines
+        .GroupBy(item => item.Currency)
+        .Select(group => new ReleaseTotal(group.Key, group.Sum(item => item.Amount), group.Count()))
+        .ToArray();
+
+    private string AllowanceTitle => Trip.Category == "Local" ? "Daily Allowance" : "Winter Allowance";
+
+    private static string FormatAmount(decimal amount) => amount.ToString("#,##0.##");
+
+    private static string FormatCost(CostLine item) => $"{FormatAmount(item.Amount)} {item.Currency}";
+
+    private sealed record CostLine(decimal Amount, string Currency);
+
+    private sealed record ReleaseTotal(string Currency, decimal Amount, int ItemCount);
+}

@@ -1,0 +1,739 @@
+@page "/dashboard"
+@using System.Globalization
+@inject AuthSessionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Business Travel System - Home</PageTitle>
+
+<main class="dashboard-page @(isMapExpanded ? "has-expanded-map" : null)">
+    <header class="dashboard-topbar">
+        <div class="topbar-menu">
+            <button class="topbar-brand-button" type="button" aria-haspopup="true" aria-expanded="@showLogoMenu" @onclick="ToggleLogoMenu">
+                <span class="topbar-brand-mark">
+                    <img src="images/app-mark.png" alt="" />
+                </span>
+                <span class="topbar-brand-copy">
+                    <span class="topbar-brand-title">Business Travel System</span>
+                    <span class="topbar-version">Version 1.0.0.0 Live</span>
+                </span>
+                <span class="chevron" aria-hidden="true"></span>
+            </button>
+
+            @if (showLogoMenu)
+            {
+                <div class="topbar-dropdown topbar-dropdown-left" role="menu">
+                    @foreach (var module in Modules)
+                    {
+                        <button class="dropdown-item" type="button" role="menuitem" @onclick="() => OpenModule(module.Key)">
+                            <span class="dropdown-icon icon-@module.Key" aria-hidden="true">
+                                @if (module.NotificationCount > 0)
+                                {
+                                    <span class="dropdown-badge">@module.NotificationCount</span>
+                                }
+                            </span>
+                            <span class="dropdown-copy">
+                                <span class="dropdown-title">@GetHeaderMenuLabel(module)</span>
+                            </span>
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="tdk-topbar-logo">
+            <img src="images/tdk-logo.png" alt="TDK In Everything, Better" />
+        </div>
+
+        <div class="topbar-menu topbar-user-menu">
+            <button class="user-menu-button" type="button" aria-haspopup="true" aria-expanded="@showUserMenu" @onclick="ToggleUserMenu">
+                <span class="user-avatar" aria-hidden="true">@UserInitial</span>
+                <span class="user-name">@UserDisplayName</span>
+                <span class="chevron" aria-hidden="true"></span>
+            </button>
+
+            @if (showUserMenu)
+            {
+                <div class="topbar-dropdown topbar-dropdown-right user-dropdown" role="menu">
+                    <div class="user-dropdown-card" role="none">
+                        <span class="user-avatar dropdown-user-avatar" aria-hidden="true">@UserInitial</span>
+                        <span>
+                            <span class="dropdown-title">@UserDisplayName</span>
+                            <span class="dropdown-description">Signed in</span>
+                        </span>
+                    </div>
+                    <button class="dropdown-item dropdown-item-danger" type="button" role="menuitem" @onclick="SignOut">
+                        <span class="dropdown-icon icon-logout" aria-hidden="true"></span>
+                        <span class="dropdown-copy">
+                            <span class="dropdown-title">Logout</span>
+                            <span class="dropdown-description">Return to sign in</span>
+                        </span>
+                    </button>
+                </div>
+            }
+        </div>
+    </header>
+
+    @if (ActiveModule is not null)
+    {
+        <section class="module-page" aria-labelledby="module-title">
+            <div class="module-page-head">
+                <button class="ghost-button" type="button" @onclick="BackToDashboard">
+                    <span aria-hidden="true">‹</span>
+                    Home
+                </button>
+                <span class="module-status">Prototype</span>
+            </div>
+
+            <div class="module-hero">
+                <div>
+                    <p class="section-kicker">@ActiveModule.Label</p>
+                    <h1 id="module-title">@ActiveModule.Title</h1>
+                    <p>@ActiveModule.Description</p>
+                </div>
+                <button class="primary-action" type="button">@ActiveModule.PrimaryAction</button>
+            </div>
+
+            <div class="module-grid">
+                <article class="module-panel">
+                    <span class="panel-label">Open items</span>
+                    <strong>@ActiveModule.OpenItems</strong>
+                    <p>@ActiveModule.OpenSummary</p>
+                </article>
+                <article class="module-panel">
+                    <span class="panel-label">This month</span>
+                    <strong>@ActiveModule.MonthlyTotal</strong>
+                    <p>@ActiveModule.MonthSummary</p>
+                </article>
+                <article class="module-panel module-panel-wide">
+                    <span class="panel-label">Recent activity</span>
+                    <div class="activity-list">
+                        @foreach (var activity in ActiveModule.Activities)
+                        {
+                            <div class="activity-row">
+                                <span></span>
+                                <p>@activity</p>
+                            </div>
+                        }
+                    </div>
+                </article>
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="travel-map @(isMapExpanded ? "is-expanded" : null)" aria-label="Active business trip map">
+            <div class="map-viewport @(isDraggingMap ? "is-dragging" : null)" @onpointerdown="StartMapDrag" @onpointerdown:preventDefault @onpointermove="DragMap" @onpointerup="StopMapDrag" @onpointerleave="StopMapDrag" @onpointercancel="StopMapDrag">
+                <div class="map-pan-surface" style="@GetMapSurfaceStyle()">
+                    <img class="map-art" src="images/business-travel-world-map.png?v=20260710-dark-blue-map" alt="" draggable="false" />
+
+                    @foreach (var trip in ActiveTrips)
+                    {
+                        <button class="map-marker @(FocusTrip == trip ? "is-selected" : null)" type="button" style="@GetMarkerStyle(trip)" aria-label="@($"{trip.City}, {trip.Country}")" @onclick="() => SelectTrip(trip)" @onpointerdown:stopPropagation>
+                            <span class="pin-dot" aria-hidden="true"></span>
+                            <span class="map-tooltip" role="tooltip">
+                                <span class="map-card-label">Active trip</span>
+                                <strong>@trip.City, @trip.Country</strong>
+                                <span>@trip.DateRange</span>
+                                <span class="map-card-meta">
+                                    <span>@trip.Owner</span>
+                                    <span>@trip.Travelers travelers</span>
+                                </span>
+                            </span>
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="map-zoom-controls" aria-label="Map controls">
+                <button class="map-expand-button" type="button" aria-label="@(isMapExpanded ? "Minimize map" : "Expand map")" title="@(isMapExpanded ? "Minimize map" : "Expand map")" @onclick="ToggleMapExpanded" @onclick:stopPropagation @onpointerdown:stopPropagation>
+                    <span class="expand-icon" aria-hidden="true"></span>
+                </button>
+                <button type="button" aria-label="Zoom in" title="Zoom in" @onclick="() => ChangeMapZoom(ZoomStep)" @onclick:stopPropagation @onpointerdown:stopPropagation disabled="@(mapZoom >= MaxMapZoom)">+</button>
+                <button type="button" aria-label="Zoom out" title="Zoom out" @onclick="() => ChangeMapZoom(-ZoomStep)" @onclick:stopPropagation @onpointerdown:stopPropagation disabled="@(mapZoom <= MinMapZoom)">-</button>
+            </div>
+
+            <nav class="map-action-dock" aria-label="Travel actions">
+                @foreach (var module in Modules)
+                {
+                    <button class="map-action-button" type="button" @onclick="() => OpenModule(module.Key)">
+                        <span class="action-icon icon-@module.Key" aria-hidden="true">
+                            @if (module.NotificationCount > 0)
+                            {
+                                <span class="action-badge">@module.NotificationCount</span>
+                            }
+                        </span>
+                        <span>@module.Label</span>
+                    </button>
+                }
+            </nav>
+        </section>
+
+        <section class="dashboard-content" aria-labelledby="dashboard-title">
+            <h1 id="dashboard-title" class="visually-hidden">Business Travel Home</h1>
+
+            <div class="metric-grid">
+                @foreach (var metric in MetricCards)
+                {
+                    <article class="metric-card @metric.ToneClass">
+                        <h2>@metric.Title</h2>
+                        <dl>
+                            <div>
+                                <dt>Local</dt>
+                                <dd>@metric.Local</dd>
+                            </div>
+                            <div>
+                                <dt>Overseas</dt>
+                                <dd>@metric.Overseas</dd>
+                            </div>
+                        </dl>
+                    </article>
+                }
+            </div>
+
+            <div class="analytics-grid">
+                <article class="dashboard-card cost-card">
+                    <div class="card-head">
+                        <h2>Cost per BU</h2>
+                        <span>PHP</span>
+                    </div>
+                    <div class="cost-chart-wrap">
+                        <div class="donut-chart" role="img" aria-label="Cost distribution by business unit"></div>
+                        <div class="donut-center">
+                            <strong>2.4M</strong>
+                            <span>Total</span>
+                        </div>
+                    </div>
+                    <div class="legend-grid">
+                        @foreach (var item in CostItems)
+                        {
+                            <span><i class="@item.ToneClass"></i>@item.Label</span>
+                        }
+                    </div>
+                </article>
+
+                <article class="dashboard-card monthly-card">
+                    <div class="card-head">
+                        <h2>Business Travel per Month</h2>
+                        <div class="segmented-control" aria-label="Chart period">
+                            <span>Today</span>
+                            <span>Weekly</span>
+                            <span class="is-active">Monthly</span>
+                        </div>
+                    </div>
+                    <div class="bar-chart" role="img" aria-label="Monthly business travel volume">
+                        @foreach (var month in MonthlyTrips)
+                        {
+                            <div class="bar-group" style="@GetBarStyle(month)">
+                                <span class="bar-value">@month.Count</span>
+                                <span class="bar-fill"></span>
+                                <span class="bar-label">@month.Label</span>
+                            </div>
+                        }
+                    </div>
+                </article>
+            </div>
+
+            <article class="dashboard-card calendar-card">
+                @if (selectedCalendarDay is null)
+                {
+                    <div class="card-head">
+                        <h2>Trip Calendar</h2>
+                        <span>July 2026</span>
+                    </div>
+                    <div class="calendar-weekdays" aria-hidden="true">
+                        <span>Mon</span>
+                        <span>Tue</span>
+                        <span>Wed</span>
+                        <span>Thu</span>
+                        <span>Fri</span>
+                        <span>Sat</span>
+                        <span>Sun</span>
+                    </div>
+                    <div class="trip-calendar" aria-label="July 2026 trip calendar">
+                        @foreach (var day in CalendarDays)
+                        {
+                            <button class="@GetCalendarDayClass(day)" type="button" disabled="@(!day.HasTravelers)" @onclick="() => SelectCalendarDay(day)">
+                                <span class="day-number">@day.Label</span>
+                            </button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="calendar-detail-head">
+                        <button class="ghost-button" type="button" @onclick="BackToCalendar">
+                            <span aria-hidden="true">‹</span>
+                            Calendar
+                        </button>
+                        <div>
+                            <span class="section-kicker">Active travelers</span>
+                            <h2>July @selectedCalendarDay.Label, 2026</h2>
+                        </div>
+                    </div>
+                    <div class="traveler-list" tabindex="0">
+                        @foreach (var traveler in selectedCalendarDay.Travelers)
+                        {
+                            <div class="traveler-row">
+                                <span class="traveler-avatar" aria-hidden="true">@traveler.Initials</span>
+                                <div>
+                                    <strong>@traveler.Name</strong>
+                                    <p>@traveler.Department</p>
+                                </div>
+                                <span>@traveler.Destination</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </article>
+        </section>
+    }
+</main>
+
+@code {
+    [Parameter, SupplyParameterFromQuery(Name = "module")]
+    public string? RequestedModule { get; set; }
+
+    private bool showLogoMenu;
+    private bool showUserMenu;
+    private bool isMapExpanded;
+    private bool isDraggingMap;
+    private double mapPanX;
+    private double mapPanY;
+    private double mapZoom = 1.16;
+    private double dragStartX;
+    private double dragStartY;
+    private double dragStartPanX;
+    private double dragStartPanY;
+    private string? activeModuleKey;
+    private TripRecord? selectedTrip;
+    private CalendarDay? selectedCalendarDay;
+    private const double MinMapZoom = 1.0;
+    private const double MaxMapZoom = 2.1;
+    private const double ZoomStep = 0.2;
+
+    private string UserDisplayName => string.IsNullOrWhiteSpace(Session.UserName) ? "Olivia Rodrigo" : Session.UserName.Trim();
+
+    private string UserInitial => UserDisplayName[..1].ToUpperInvariant();
+
+    private DashboardModule? ActiveModule => Modules.FirstOrDefault(module => module.Key == activeModuleKey);
+
+    private TripRecord FocusTrip => selectedTrip ?? ActiveTrips[0];
+
+    protected override void OnInitialized()
+    {
+        if (!Session.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        selectedTrip = ActiveTrips[0];
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(RequestedModule) && Modules.Any(module => module.Key == RequestedModule))
+        {
+            activeModuleKey = RequestedModule;
+        }
+    }
+
+    private void ToggleLogoMenu()
+    {
+        showLogoMenu = !showLogoMenu;
+        showUserMenu = false;
+    }
+
+    private void ToggleUserMenu()
+    {
+        showUserMenu = !showUserMenu;
+        showLogoMenu = false;
+    }
+
+    private void ToggleMapExpanded()
+    {
+        isMapExpanded = !isMapExpanded;
+        ResetMapPan();
+        showLogoMenu = false;
+        showUserMenu = false;
+    }
+
+    private void OpenModule(string key)
+    {
+        if (key == "find")
+        {
+            Navigation.NavigateTo("/find");
+            return;
+        }
+
+        activeModuleKey = key;
+        isMapExpanded = false;
+        showLogoMenu = false;
+        showUserMenu = false;
+    }
+
+    private void BackToDashboard()
+    {
+        activeModuleKey = null;
+    }
+
+    private void SelectTrip(TripRecord trip)
+    {
+        selectedTrip = trip;
+    }
+
+    private void SelectCalendarDay(CalendarDay day)
+    {
+        if (day.HasTravelers)
+        {
+            selectedCalendarDay = day;
+        }
+    }
+
+    private void BackToCalendar()
+    {
+        selectedCalendarDay = null;
+    }
+
+    private void StartMapDrag(PointerEventArgs args)
+    {
+        isDraggingMap = true;
+        dragStartX = args.ClientX;
+        dragStartY = args.ClientY;
+        dragStartPanX = mapPanX;
+        dragStartPanY = mapPanY;
+    }
+
+    private void DragMap(PointerEventArgs args)
+    {
+        if (!isDraggingMap)
+        {
+            return;
+        }
+
+        var horizontalLimit = GetHorizontalPanLimit();
+        var verticalLimit = GetVerticalPanLimit();
+
+        mapPanX = Math.Clamp(dragStartPanX + args.ClientX - dragStartX, -horizontalLimit, horizontalLimit);
+        mapPanY = Math.Clamp(dragStartPanY + args.ClientY - dragStartY, -verticalLimit, verticalLimit);
+    }
+
+    private void StopMapDrag()
+    {
+        isDraggingMap = false;
+    }
+
+    private void ResetMapPan()
+    {
+        isDraggingMap = false;
+        mapPanX = 0;
+        mapPanY = 0;
+    }
+
+    private void ChangeMapZoom(double delta)
+    {
+        mapZoom = Math.Clamp(Math.Round((mapZoom + delta) * 100) / 100, MinMapZoom, MaxMapZoom);
+        ClampMapPan();
+    }
+
+    private void ClampMapPan()
+    {
+        var horizontalLimit = GetHorizontalPanLimit();
+        var verticalLimit = GetVerticalPanLimit();
+
+        mapPanX = Math.Clamp(mapPanX, -horizontalLimit, horizontalLimit);
+        mapPanY = Math.Clamp(mapPanY, -verticalLimit, verticalLimit);
+    }
+
+    private double GetHorizontalPanLimit()
+    {
+        return (isMapExpanded ? 720 : 400) * Math.Max(0, mapZoom - MinMapZoom);
+    }
+
+    private double GetVerticalPanLimit()
+    {
+        return (isMapExpanded ? 420 : 140) * Math.Max(0, mapZoom - MinMapZoom);
+    }
+
+    private void SignOut()
+    {
+        Session.SignOut();
+        Navigation.NavigateTo("/");
+    }
+
+    private string GetMapSurfaceStyle()
+    {
+        var baseScale = 1.0;
+        var scale = baseScale * mapZoom;
+        var markerScale = 1 / scale;
+        return string.Create(CultureInfo.InvariantCulture, $"--map-pan-x: {mapPanX}px; --map-pan-y: {mapPanY}px; --map-scale: {scale}; --map-marker-scale: {markerScale};");
+    }
+
+    private static string GetMarkerStyle(TripRecord trip)
+    {
+        return string.Create(CultureInfo.InvariantCulture, $"left: {trip.MapX}%; top: {trip.MapY}%;");
+    }
+
+    private static string GetBarStyle(MonthlyTrip month)
+    {
+        return string.Create(CultureInfo.InvariantCulture, $"--bar-height: {month.Height}%;");
+    }
+
+    private static string GetCalendarDayClass(CalendarDay day)
+    {
+        var classes = "calendar-day";
+
+        if (day.IsMuted)
+        {
+            classes += " is-muted";
+        }
+
+        if (day.IsToday)
+        {
+            classes += " is-today";
+        }
+
+        if (day.HasTravelers)
+        {
+            classes += " has-trip";
+        }
+
+        return classes;
+    }
+
+    private static string GetHeaderMenuLabel(DashboardModule module)
+    {
+        return module.Key == "approval" ? "Approvals" : module.Label;
+    }
+
+    private static readonly DashboardModule[] Modules =
+    {
+        new(
+            "find",
+            "Find",
+            "Find Trips",
+            "Search active travel requests, travelers, destinations, and trip documents from one work area.",
+            "New Search",
+            12,
+            "Trips currently match open search filters.",
+            34,
+            "Registered trips across local and overseas routes.",
+            new[] { "Tokyo trip BT-2026-014 was updated.", "Singapore route has three travelers checked in.", "Cebu accommodation request is awaiting confirmation." },
+            0),
+        new(
+            "apply",
+            "Apply",
+            "Apply for Business Travel",
+            "Start a local or overseas application with traveler details, schedules, budget, and itinerary.",
+            "Create Application",
+            5,
+            "Draft applications need traveler review.",
+            18,
+            "Applications were submitted this month.",
+            new[] { "BT-2026-021 is ready for manager review.", "Two drafts are missing return flight details.", "Local travel template was used four times this week." },
+            0),
+        new(
+            "approval",
+            "Approval",
+            "Approval Queue",
+            "Review business trip requests, release dates, estimated costs, and completion status.",
+            "View Approval",
+            9,
+            "Requests are waiting for approval action.",
+            27,
+            "Requests were cleared this month.",
+            new[] { "Taipei service trip was approved by Finance.", "Bangkok supplier visit is ready for ticketing.", "Cebu audit trip moved to travel preparation." },
+            7),
+        new(
+            "reports",
+            "Reports",
+            "Travel Reports",
+            "Monitor travel volume, business unit costs, approval speed, and destination trends.",
+            "Open Report",
+            7,
+            "Reports have fresh dashboard data.",
+            42,
+            "Trips are included in the current reporting period.",
+            new[] { "Monthly cost report was refreshed.", "Engineering has the highest overseas spend.", "Approval cycle time is down by 14 percent." },
+            0)
+    };
+
+    private static readonly TripRecord[] ActiveTrips =
+    {
+        new("Tokyo", "Japan", "M. Santos", "Jul 14-18, 2026", "Overseas", 4, 88.79, 33.09),
+        new("Singapore", "Singapore", "A. Cruz", "Jul 16-20, 2026", "Overseas", 3, 78.84, 57.61),
+        new("Cebu", "Philippines", "J. Reyes", "Jul 22-24, 2026", "Local", 5, 84.41, 51.20),
+        new("Taipei", "Taiwan", "L. Garcia", "Jul 28-Aug 1, 2026", "Overseas", 2, 83.77, 40.69),
+        new("Bangkok", "Thailand", "P. Lim", "Jul 9-12, 2026", "Overseas", 6, 77.92, 48.75),
+        new("Laguna", "Philippines", "C. Dizon", "Jul 10, 2026", "Local", 8, 83.70, 48.45)
+    };
+
+    private static readonly MetricCard[] MetricCards =
+    {
+        new("My Trips", 2, 3, "metric-blue"),
+        new("My Applications", 4, 2, "metric-teal"),
+        new("My Approval", 3, 3, "metric-violet"),
+        new("Total Applications", 18, 11, "metric-orange")
+    };
+
+    private static readonly CostItem[] CostItems =
+    {
+        new("Sales", "legend-blue"),
+        new("Engineering", "legend-violet"),
+        new("Finance", "legend-red"),
+        new("Production", "legend-orange"),
+        new("HR", "legend-green")
+    };
+
+    private static readonly MonthlyTrip[] MonthlyTrips =
+    {
+        new("Jan", 118, 55),
+        new("Feb", 196, 92),
+        new("Mar", 142, 67),
+        new("Apr", 151, 71),
+        new("May", 79, 37),
+        new("Jun", 96, 45)
+    };
+
+    private static readonly ActiveTraveler[] BangkokTravelers =
+    {
+        new("Paolo Lim", "Bangkok", "Procurement"),
+        new("Mia Santos", "Bangkok", "Sales"),
+        new("Rafael Tan", "Bangkok", "Engineering")
+    };
+
+    private static readonly ActiveTraveler[] LagunaTravelers =
+    {
+        new("Carlo Dizon", "Laguna", "Production"),
+        new("Ana Reyes", "Laguna", "Quality"),
+        new("Bea Flores", "Laguna", "Finance")
+    };
+
+    private static readonly ActiveTraveler[] TokyoTravelers =
+    {
+        new("Mika Santos", "Tokyo", "Engineering"),
+        new("Ellen Cruz", "Tokyo", "Operations"),
+        new("Nico Reyes", "Tokyo", "IT"),
+        new("Hana Yu", "Tokyo", "Finance")
+    };
+
+    private static readonly ActiveTraveler[] SingaporeTravelers =
+    {
+        new("Ari Cruz", "Singapore", "Sales"),
+        new("Lance Garcia", "Singapore", "Legal"),
+        new("Pat Lim", "Singapore", "Customer Support")
+    };
+
+    private static readonly ActiveTraveler[] CebuTravelers =
+    {
+        new("Jessa Reyes", "Cebu", "Audit"),
+        new("Marco Lee", "Cebu", "Finance"),
+        new("Dani Ong", "Cebu", "Operations"),
+        new("Ivan Go", "Cebu", "Engineering")
+    };
+
+    private static readonly ActiveTraveler[] TaipeiTravelers =
+    {
+        new("Lena Garcia", "Taipei", "Service"),
+        new("Ken Ramos", "Taipei", "Engineering")
+    };
+
+    private static readonly ActiveTraveler[] BangkokLagunaTravelers =
+    {
+        new("Paolo Lim", "Bangkok", "Procurement"),
+        new("Mia Santos", "Bangkok", "Sales"),
+        new("Rafael Tan", "Bangkok", "Engineering"),
+        new("Carlo Dizon", "Laguna", "Production"),
+        new("Ana Reyes", "Laguna", "Quality"),
+        new("Bea Flores", "Laguna", "Finance")
+    };
+
+    private static readonly ActiveTraveler[] TokyoSingaporeTravelers =
+    {
+        new("Mika Santos", "Tokyo", "Engineering"),
+        new("Ellen Cruz", "Tokyo", "Operations"),
+        new("Nico Reyes", "Tokyo", "IT"),
+        new("Hana Yu", "Tokyo", "Finance"),
+        new("Ari Cruz", "Singapore", "Sales"),
+        new("Lance Garcia", "Singapore", "Legal"),
+        new("Pat Lim", "Singapore", "Customer Support")
+    };
+
+    private static readonly CalendarDay[] CalendarDays =
+    {
+        new("29", true, false, Array.Empty<ActiveTraveler>()),
+        new("30", true, false, Array.Empty<ActiveTraveler>()),
+        new("1", false, false, Array.Empty<ActiveTraveler>()),
+        new("2", false, false, Array.Empty<ActiveTraveler>()),
+        new("3", false, false, Array.Empty<ActiveTraveler>()),
+        new("4", false, false, Array.Empty<ActiveTraveler>()),
+        new("5", false, false, Array.Empty<ActiveTraveler>()),
+        new("6", false, false, Array.Empty<ActiveTraveler>()),
+        new("7", false, false, Array.Empty<ActiveTraveler>()),
+        new("8", false, false, Array.Empty<ActiveTraveler>()),
+        new("9", false, true, BangkokTravelers),
+        new("10", false, false, BangkokLagunaTravelers),
+        new("11", false, false, BangkokTravelers),
+        new("12", false, false, BangkokTravelers),
+        new("13", false, false, Array.Empty<ActiveTraveler>()),
+        new("14", false, false, TokyoTravelers),
+        new("15", false, false, TokyoTravelers),
+        new("16", false, false, TokyoSingaporeTravelers),
+        new("17", false, false, TokyoSingaporeTravelers),
+        new("18", false, false, TokyoSingaporeTravelers),
+        new("19", false, false, SingaporeTravelers),
+        new("20", false, false, SingaporeTravelers),
+        new("21", false, false, Array.Empty<ActiveTraveler>()),
+        new("22", false, false, CebuTravelers),
+        new("23", false, false, CebuTravelers),
+        new("24", false, false, CebuTravelers),
+        new("25", false, false, Array.Empty<ActiveTraveler>()),
+        new("26", false, false, Array.Empty<ActiveTraveler>()),
+        new("27", false, false, Array.Empty<ActiveTraveler>()),
+        new("28", false, false, TaipeiTravelers),
+        new("29", false, false, TaipeiTravelers),
+        new("30", false, false, TaipeiTravelers),
+        new("31", false, false, TaipeiTravelers),
+        new("1", true, false, Array.Empty<ActiveTraveler>()),
+        new("2", true, false, Array.Empty<ActiveTraveler>())
+    };
+
+    private sealed record DashboardModule(
+        string Key,
+        string Label,
+        string Title,
+        string Description,
+        string PrimaryAction,
+        int OpenItems,
+        string OpenSummary,
+        int MonthlyTotal,
+        string MonthSummary,
+        string[] Activities,
+        int NotificationCount);
+
+    private sealed record TripRecord(
+        string City,
+        string Country,
+        string Owner,
+        string DateRange,
+        string TripType,
+        int Travelers,
+        double MapX,
+        double MapY);
+
+    private sealed record MetricCard(string Title, int Local, int Overseas, string ToneClass);
+
+    private sealed record CostItem(string Label, string ToneClass);
+
+    private sealed record MonthlyTrip(string Label, int Count, int Height);
+
+    private sealed record ActiveTraveler(string Name, string Destination, string Department)
+    {
+        public string Initials => string.Concat(Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => part[0])).ToUpperInvariant();
+    }
+
+    private sealed record CalendarDay(string Label, bool IsMuted, bool IsToday, ActiveTraveler[] Travelers)
+    {
+        public bool HasTravelers => Travelers.Length > 0;
+    }
+}
