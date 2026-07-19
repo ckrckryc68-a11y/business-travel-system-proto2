@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @using System.ComponentModel.DataAnnotations
 @inject AuthSessionService Session
 @inject NavigationManager Navigation
@@ -78,7 +78,7 @@
     private void HandleLogin()
     {
         Session.SignIn(loginModel.UserName ?? string.Empty, loginModel.RememberMe);
-        Navigation.NavigateTo("/dashboard");
+        Navigation.NavigateTo("dashboard");
     }
 
     private sealed class LoginModel

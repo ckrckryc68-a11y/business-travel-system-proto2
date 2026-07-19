@@ -323,7 +323,7 @@
     {
         if (!Session.IsAuthenticated)
         {
-            Navigation.NavigateTo("/");
+            Navigation.NavigateTo(string.Empty);
             return;
         }
 
@@ -362,7 +362,7 @@
     {
         if (key == "find")
         {
-            Navigation.NavigateTo("/find");
+            Navigation.NavigateTo("find");
             return;
         }
 
@@ -458,7 +458,7 @@
     private void SignOut()
     {
         Session.SignOut();
-        Navigation.NavigateTo("/");
+        Navigation.NavigateTo(string.Empty);
     }
 
     private string GetMapSurfaceStyle()

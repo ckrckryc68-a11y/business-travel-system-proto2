@@ -308,7 +308,7 @@
     {
         if (!Session.IsAuthenticated)
         {
-            Navigation.NavigateTo("/");
+            Navigation.NavigateTo(string.Empty);
         }
     }
 
@@ -330,7 +330,7 @@
 
         if (key != "find")
         {
-            Navigation.NavigateTo($"/dashboard?module={Uri.EscapeDataString(key)}");
+            Navigation.NavigateTo($"dashboard?module={Uri.EscapeDataString(key)}");
         }
     }
 
@@ -446,14 +446,14 @@
 
     private void DismissActionMessage() => actionMessage = null;
 
-    private void BackToDashboard() => Navigation.NavigateTo("/dashboard");
+    private void BackToDashboard() => Navigation.NavigateTo("dashboard");
 
-    private void AddBusinessTrip() => Navigation.NavigateTo("/dashboard?module=apply");
+    private void AddBusinessTrip() => Navigation.NavigateTo("dashboard?module=apply");
 
     private void SignOut()
     {
         Session.SignOut();
-        Navigation.NavigateTo("/");
+        Navigation.NavigateTo(string.Empty);
     }
 
     private static readonly string[] DetailTabs = { "General", "Trip", "Costing", "History", "Comments" };
