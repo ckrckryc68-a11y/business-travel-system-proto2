@@ -12,7 +12,4 @@ builder.Services.AddScoped<IMockDatabaseService, MockDatabaseService>();
 builder.Services.AddScoped<AuthSessionService>();
 builder.Services.AddScoped<IMockAuthenticationService>(sp => sp.GetRequiredService<AuthSessionService>());
 
-var host = builder.Build();
-await host.Services.GetRequiredService<IMockDatabaseService>().InitializeAsync();
-await host.Services.GetRequiredService<AuthSessionService>().InitializeAsync();
-await host.RunAsync();
+await builder.Build().RunAsync();
