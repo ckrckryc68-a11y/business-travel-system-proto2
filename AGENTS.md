@@ -85,3 +85,17 @@
 * Treat the Work Laptop as a review-only device unless I explicitly confirm that another activity is authorized.
 * Never suggest bypassing company security controls, network restrictions, access controls, monitoring, or software-installation policies.
 * Never transfer company-confidential information, credentials, private source code, internal documents, or intranet-only data to personal devices or external AI services without confirmed authorization.
+
+---
+
+## C. Database Schema Alignment
+
+### Database Dictionary as a Required Reference
+
+* Treat `DATABASE_DICTIONARY.md` as the current database reference and as a required factor in every upcoming project change.
+* Before implementing a requested change, review whether it affects or assumes anything about persistence, entities, columns, relationships, lookup types, statuses, workflows, approvals, attachments, audit history, security, or retention.
+* Do not silently work around, contradict, or expand the documented schema in application code.
+* If a requested change conflicts with the database dictionary, exposes an unclear relationship, requires a missing table, column, lookup value, or constraint, or creates a data-integrity concern, notify the user before implementation.
+* Explain the specific schema mismatch, its likely project impact, and the recommended schema adjustment so the database and application can be aligned first.
+* Continue implementation only after the schema direction is aligned. Update the database dictionary and affected implementation together when the agreed change modifies the schema.
+* Even when a request appears unrelated to the database, verify that it does not introduce a conflicting persistence assumption.
