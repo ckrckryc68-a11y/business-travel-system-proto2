@@ -24,7 +24,7 @@
             <DataAnnotationsValidator />
 
             <div class="form-field" data-node-id="125:709">
-                <label for="username">Username</label>
+                <label for="username">Employee number or email</label>
                 <input id="username" class="text-input" autocomplete="username" @bind="loginModel.UserName" @bind:event="oninput" />
                 <ValidationMessage For="@(() => loginModel.UserName)" />
             </div>
@@ -35,15 +35,26 @@
                 <ValidationMessage For="@(() => loginModel.Password)" />
             </div>
 
+            @if (!string.IsNullOrWhiteSpace(loginError))
+            {
+                <div class="validation-message" role="alert">@loginError</div>
+            }
+
             <div class="form-actions">
                 <label class="remember-me" data-node-id="206:838">
                     <input type="checkbox" class="remember-checkbox" @bind="loginModel.RememberMe" />
                     <span>Remember me</span>
                 </label>
 
-                <button class="login-button" type="submit" data-node-id="129:405">Login</button>
+                <button class="login-button" type="submit" disabled="@isSigningIn" data-node-id="129:405">
+                    @(isSigningIn ? "Signing in…" : "Login")
+                </button>
             </div>
         </EditForm>
+
+        <p class="mock-auth-note">
+            Local prototype only. The temporary mock password is intentionally insecure and must never be used in production.
+        </p>
 
         <div class="shortcut-grid" data-node-id="208:975">
             <button class="shortcut-button" type="button" aria-label="Help and Support">
@@ -74,21 +85,43 @@
 
 @code {
     private readonly LoginModel loginModel = new();
+    private string? loginError;
+    private bool isSigningIn;
 
-    private void HandleLogin()
+    private async Task HandleLogin()
     {
-        Session.SignIn(loginModel.UserName ?? string.Empty, loginModel.RememberMe);
-        Navigation.NavigateTo("dashboard");
+        loginError = null;
+        isSigningIn = true;
+
+        try
+        {
+            var result = await Session.SignInAsync(
+                loginModel.UserName ?? string.Empty,
+                loginModel.Password ?? string.Empty,
+                loginModel.RememberMe);
+
+            if (!result.Succeeded)
+            {
+                loginError = result.ErrorMessage;
+                return;
+            }
+
+            Navigation.NavigateTo("dashboard");
+        }
+        finally
+        {
+            isSigningIn = false;
+        }
     }
 
     private sealed class LoginModel
     {
-        [Required(ErrorMessage = "Username is required.")]
+        [Required(ErrorMessage = "Employee number or email is required.")]
         public string? UserName { get; set; }
 
         [Required(ErrorMessage = "Password is required.")]
         public string? Password { get; set; }
 
-        public bool RememberMe { get; set; }
+        public bool RememberMe { get; set; } = true;
     }
 }

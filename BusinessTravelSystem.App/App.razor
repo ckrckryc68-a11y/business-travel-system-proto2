@@ -1,4 +1,9 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
+@using Microsoft.JSInterop
+@inject AuthSessionService Session
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
@@ -10,3 +15,61 @@
         </LayoutView>
     </NotFound>
 </Router>
+
+@code {
+    private IJSObjectReference? permissionModule;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await Session.InitializeAsync();
+        permissionModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/mock-permissions.js");
+        Session.Changed += HandleSessionChanged;
+        await ApplyPermissionsAsync();
+        StateHasChanged();
+    }
+
+    private void HandleSessionChanged() => _ = InvokeAsync(ApplyPermissionsAsync);
+
+    private async Task ApplyPermissionsAsync()
+    {
+        if (permissionModule is null)
+        {
+            return;
+        }
+
+        await permissionModule.InvokeVoidAsync("start", new
+        {
+            authenticated = Session.IsAuthenticated,
+            modules = new Dictionary<string, bool>
+            {
+                ["find"] = Session.CanAccessModule("find"),
+                ["apply"] = Session.CanAccessModule("apply"),
+                ["approval"] = Session.CanAccessModule("approval"),
+                ["reports"] = Session.CanAccessModule("reports")
+            },
+            permissions = new Dictionary<string, bool>
+            {
+                ["create"] = Session.Can("trips.create"),
+                ["edit"] = Session.Can("trips.edit"),
+                ["delete"] = Session.Can("trips.delete"),
+                ["approve"] = Session.Can("trips.approve"),
+                ["reject"] = Session.Can("trips.reject"),
+                ["arrangements"] = Session.Can("arrangements.manage")
+            }
+        });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Session.Changed -= HandleSessionChanged;
+        if (permissionModule is not null)
+        {
+            await permissionModule.DisposeAsync();
+        }
+    }
+}
