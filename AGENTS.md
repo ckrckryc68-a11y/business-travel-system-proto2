@@ -99,3 +99,19 @@
 * Explain the specific schema mismatch, its likely project impact, and the recommended schema adjustment so the database and application can be aligned first.
 * Continue implementation only after the schema direction is aligned. Update the database dictionary and affected implementation together when the agreed change modifies the schema.
 * Even when a request appears unrelated to the database, verify that it does not introduce a conflicting persistence assumption.
+
+---
+
+## D. Approval Flow Alignment
+
+### Approval Flow as a Required Reference
+
+* Treat `APPROVAL_FLOW.md` as the current business-process and approval-flow reference and as a required factor in every upcoming project change.
+* Review requested changes against both `APPROVAL_FLOW.md` and `DATABASE_DICTIONARY.md`; neither document should be considered in isolation when a feature affects workflow, permissions, status transitions, approvals, cash advances, travel preparation, reporting, liquidation, cancellation, or attachments.
+* Preserve the documented 13-step sequence unless the user explicitly approves a process revision.
+* Treat the two Accounting Manager Approval entries as separate workflow steps with distinct sequence numbers and step codes.
+* Do not silently change a role's responsibility, remove an approval, bypass a required control, or invent a transition that is not documented.
+* Enforce or account for the documented special rules: Superior editing, GA process-wide access, the Cash Advance Review reversal, one-week advance notice, Clinic medical supplies, cancellation at any time with a required reason, direct PDF viewing, and receipt consolidation.
+* If a requested change conflicts with the approval flow, exposes an ambiguous process rule, or cannot be represented safely by the current database schema, notify the user before implementation.
+* Explain the process or schema mismatch, its likely impact, and the recommended alignment decision. Do not implement a workaround that causes the application, approval flow, and database dictionary to disagree.
+* When an approved project change alters the workflow or schema, update `APPROVAL_FLOW.md`, `DATABASE_DICTIONARY.md`, and the affected implementation together.
