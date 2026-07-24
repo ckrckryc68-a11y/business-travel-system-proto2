@@ -26,9 +26,11 @@
             return;
         }
 
+        await Session.InitializeAsync();
         permissionModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/mock-permissions.js");
         Session.Changed += HandleSessionChanged;
         await ApplyPermissionsAsync();
+        StateHasChanged();
     }
 
     private void HandleSessionChanged() => _ = InvokeAsync(ApplyPermissionsAsync);
