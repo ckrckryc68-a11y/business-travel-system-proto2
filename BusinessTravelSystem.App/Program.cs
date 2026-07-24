@@ -8,6 +8,11 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+builder.Services.AddScoped<IMockDatabaseService, MockDatabaseService>();
 builder.Services.AddScoped<AuthSessionService>();
+builder.Services.AddScoped<IMockAuthenticationService>(sp => sp.GetRequiredService<AuthSessionService>());
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+await host.Services.GetRequiredService<IMockDatabaseService>().InitializeAsync();
+await host.Services.GetRequiredService<AuthSessionService>().InitializeAsync();
+await host.RunAsync();
